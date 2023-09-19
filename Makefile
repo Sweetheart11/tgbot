@@ -5,4 +5,4 @@ run: build
 	@./bin/gobank
 
 init_postgres:
-	@docker run --name tgbotdb -e POSTGRES_PASSWORD=G20rcpyxCD8 -d postgres
+	@docker-compose up --build -d
