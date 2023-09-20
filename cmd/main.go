@@ -1,66 +1,86 @@
 package main
 
 import (
-	"database/sql"
+	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 
-	"github.com/joho/godotenv"
+	"github.com/Sweetheart11/tgbot/config"
+	"github.com/Sweetheart11/tgbot/fetcher"
+	"github.com/Sweetheart11/tgbot/notifier"
+	"github.com/Sweetheart11/tgbot/storage"
+	"github.com/Sweetheart11/tgbot/summarizer"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 )
 
-type PostgresStore struct {
-	db *sql.DB
-}
-
-func NewPostgresStore() (*PostgresStore, error) {
-	err := godotenv.Load(".env")
+func main() {
+	fmt.Printf("%+v", config.Get())
+	botAPI, err := tgbotapi.NewBotAPI(config.Get().TelegramBotToken)
 	if err != nil {
-		return nil, fmt.Errorf("error loading .env file: %v\n", err)
+		log.Printf("failed to create bot api: %v", err)
+		return
 	}
 
-	host := os.Getenv("POSTGRESDB_HOST")
-	port := os.Getenv("POSTGRESDB_PORT")
-	password := os.Getenv("POSTGRESDB_PASSWORD")
-	dbname := os.Getenv("POSTGRESDB_NAME")
-	user := os.Getenv("POSTGRESDB_USER")
-	sslmode := os.Getenv("POSTGRESDB_SSLMODE")
-	//
-	// connStr := fmt.Sprintf("postgres://%v:%v@%v:%v/%v?sslmode=disable",
-	// 	user, password, host, port, dbname)
-	// connStr := "hostuser=user dbname=mydb password=pass sslmode=disable"
-	connStr := fmt.Sprintf(
-		"host=%v port=%v user=%v password=%v dbname=%v sslmode=%v",
-		host,
-		port,
-		user,
-		password,
-		dbname,
-		sslmode,
+	connStr, err := config.PostgresConnStr()
+	if err != nil {
+		log.Printf("failed to get db connection string: %v", err)
+		return
+	}
+
+	db, err := sqlx.Connect("postgres", connStr)
+	if err != nil {
+		log.Printf("failed to connect to db: %v", err)
+		return
+	}
+	defer db.Close()
+
+	var (
+		articleStorage = storage.NewArticleStorage(db)
+		sourceStorage  = storage.NewSourceStorage(db)
+		fetcher        = fetcher.New(
+			articleStorage,
+			sourceStorage,
+			config.Get().FetchInterval,
+			config.Get().FilterKeywords,
+		)
+		notifier = notifier.New(
+			articleStorage,
+			summarizer.NewOpenAISummarizer(config.Get().OpenAIKey, config.Get().OpenAIPrompt),
+			botAPI,
+			config.Get().NotificationInterval,
+			2*config.Get().FetchInterval,
+			config.Get().TelegramChannelID,
+		)
 	)
 
-	fmt.Println(connStr)
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer cancel()
 
-	db, err := sql.Open("postgres", connStr)
-	if err != nil {
-		return nil, err
+	go func(ctx context.Context) {
+		if err := fetcher.Start(ctx); err != nil {
+			if !errors.Is(err, context.Canceled) {
+				log.Printf("failed to start fetcher: %v", err)
+				return
+			}
+
+			log.Println("fetcher stopped")
+		}
+	}(ctx)
+
+	// go func(ctx context.Context) {
+	if err := notifier.Start(ctx); err != nil {
+		if !errors.Is(err, context.Canceled) {
+			log.Printf("failed to start notifier: %v", err)
+			return
+		}
+
+		log.Println("notifier stopped")
 	}
-
-	if err := db.Ping(); err != nil {
-		return nil, err
-	}
-
-	return &PostgresStore{
-		db: db,
-	}, nil
-}
-
-func main() {
-	store, err := NewPostgresStore()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Printf("%+v\n", store)
+	// }(ctx)
 }

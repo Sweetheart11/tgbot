@@ -14,3 +14,6 @@ up_migrations:
 	@cd storage/migrations ; \
 	goose postgres "host=${POSTGRESDB_HOST} user=${POSTGRESDB_USER} database=${POSTGRESDB_NAME} password=${POSTGRESDB_PASSWORD} sslmode=${POSTGRESDB_SSLMODE}" up
 
+down_migrations: 
+	@cd storage/migrations ; \
+	goose postgres "host=${POSTGRESDB_HOST} user=${POSTGRESDB_USER} database=${POSTGRESDB_NAME} password=${POSTGRESDB_PASSWORD} sslmode=${POSTGRESDB_SSLMODE}" down
