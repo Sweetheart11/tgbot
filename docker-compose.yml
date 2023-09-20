@@ -5,14 +5,19 @@ services:
     image: postgres
     restart: always
     ports:
-      - 5432:5432
+      - ${POSTGRESDB_PORT}:5432
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: pass
-      POSTGRES_DB: mydb
+      POSTGRES_USER: ${POSTGRESDB_USER}
+      POSTGRES_PASSWORD: ${POSTGRESDB_PASSWORD}
+      POSTGRES_DB: ${POSTGRESDB_NAME}
+      PGDATA: /var/lib/postgresql/data/
+    volumes:
+      - db:/var/lib/postgresql/data/
 
   adminer:
     image: adminer
     restart: always
     ports:
       - 8080:8080
+volumes:
+  db:
