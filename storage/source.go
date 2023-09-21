@@ -33,7 +33,12 @@ func (s *SourcePostgresStorage) Sources(ctx context.Context) ([]model.Source, er
 
 	for rows.Next() {
 		var source dbSource
-		if err := rows.Scan(&source); err != nil {
+		if err := rows.Scan(
+			&source.ID,
+			&source.Name,
+			&source.FeedURL,
+			&source.CreatedAt,
+		); err != nil {
 			return nil, err
 		}
 		sources = append(sources, source)
@@ -57,7 +62,12 @@ func (s *SourcePostgresStorage) SourceByID(ctx context.Context, id int64) (*mode
 		return nil, err
 	}
 
-	if err := row.Scan(&source); err != nil {
+	if err := row.Scan(
+		&source.ID,
+		&source.Name,
+		&source.FeedURL,
+		&source.CreatedAt,
+	); err != nil {
 		return nil, err
 	}
 

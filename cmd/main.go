@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"os"
 	"os/signal"
@@ -20,12 +19,13 @@ import (
 )
 
 func main() {
-	fmt.Printf("%+v", config.Get())
-	botAPI, err := tgbotapi.NewBotAPI(config.Get().TelegramBotToken)
-	if err != nil {
-		log.Printf("failed to create bot api: %v", err)
-		return
-	}
+	// botAPI, err := tgbotapi.NewBotAPI(config.Get().TelegramBotToken)
+	// type tgbotapi.BotAPI struct{}
+	var botAPI *tgbotapi.BotAPI
+	// if err != nil {
+	// 	log.Printf("failed to create bot api: %v", err)
+	// 	return
+	// }
 
 	connStr, err := config.PostgresConnStr()
 	if err != nil {

@@ -55,7 +55,6 @@ func (f *Fetcher) Start(ctx context.Context) error {
 	if err := f.Fetch(ctx); err != nil {
 		return err
 	}
-
 	for {
 		select {
 		case <-ctx.Done():

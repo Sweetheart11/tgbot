@@ -60,7 +60,16 @@ func (s *ArticlePostgresStore) AllNotPosted(
 
 	for rows.Next() {
 		var dbArticle dbArticle
-		if err := rows.Scan(&dbArticle); err != nil {
+		if err := rows.Scan(
+			&dbArticle.ID,
+			&dbArticle.SourceID,
+			&dbArticle.Title,
+			&dbArticle.Link,
+			&dbArticle.Summary,
+			&dbArticle.PublishedAt,
+			&dbArticle.PostedAt,
+			&dbArticle.CreatedAt,
+		); err != nil {
 			return nil, err
 		}
 		dbArticles = append(dbArticles, dbArticle)
