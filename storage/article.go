@@ -51,9 +51,13 @@ func (s *ArticlePostgresStore) AllNotPosted(
 	defer conn.Close()
 
 	var dbArticles []dbArticle
-	rows, err := conn.QueryContext(ctx, `SELECT * FROM articles
+	rows, err := conn.QueryContext(
+		ctx,
+		`SELECT id, source_id, title, link, summary, published_at, created_at FROM articles
     WHERE posted_at IS NULL AND published_at >= $1::timestamp ORDER BY published_at DESC LIMIT $2`,
-		since.UTC().Format(time.RFC3339), limit)
+		since.UTC().Format(time.RFC3339),
+		limit,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +71,6 @@ func (s *ArticlePostgresStore) AllNotPosted(
 			&dbArticle.Link,
 			&dbArticle.Summary,
 			&dbArticle.PublishedAt,
-			&dbArticle.PostedAt,
 			&dbArticle.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -83,7 +86,6 @@ func (s *ArticlePostgresStore) AllNotPosted(
 			Link:        dbArticle.Link,
 			Summary:     dbArticle.Summary,
 			PublishedAt: dbArticle.PublishedAt,
-			PostedAt:    dbArticle.PostedAt,
 			CreatedAt:   dbArticle.CreatedAt,
 		}
 	}), nil

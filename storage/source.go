@@ -84,10 +84,9 @@ func (s *SourcePostgresStorage) Add(ctx context.Context, source model.Source) (i
 	var id int64
 	row := conn.QueryRowContext(
 		ctx,
-		"INSERT INTO sources (name, feed_url, created_at) VALUES ($1, $2, $3) returning id",
+		"INSERT INTO sources (name, feed_url) VALUES ($1, $2) returning id",
 		source.Name,
 		source.FeedURL,
-		source.CreatedAt,
 	)
 
 	if err := row.Err(); err != nil {
