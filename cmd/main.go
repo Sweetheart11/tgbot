@@ -76,6 +76,13 @@ func main() {
 		"listsources",
 		middleware.AdminOnly(config.Get().TelegramChannelID, bot.ViewCmdListSources(sourceStorage)),
 	)
+	newsBot.RegisterCmdView(
+		"deletesource",
+		middleware.AdminOnly(
+			config.Get().TelegramChannelID,
+			bot.ViewCmdDeleteSource(sourceStorage),
+		),
+	)
 
 	go func(ctx context.Context) {
 		if err := fetcher.Start(ctx); err != nil {
