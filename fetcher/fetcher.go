@@ -7,7 +7,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Sweetheart11/tgbot/lib/dstr"
 	"github.com/Sweetheart11/tgbot/model"
 	"github.com/Sweetheart11/tgbot/source"
 )
@@ -125,10 +124,15 @@ func (f *Fetcher) processItems(ctx context.Context, source Source, items []model
 }
 
 func (f *Fetcher) itemShouldBeSkipped(item model.Item) bool {
-	categoriesSet := dstr.New(item.Categories...)
+	categoriesSet := map[string]struct{}{}
+
+	for _, category := range item.Categories {
+		categoriesSet[category] = struct{}{}
+	}
+
 	for _, keyword := range f.filterKeywords {
 		titleContainsKeyword := strings.Contains(strings.ToLower(item.Title), keyword)
-		if categoriesSet.Contains(keyword) || titleContainsKeyword {
+		if _, ok := categoriesSet[keyword]; ok || titleContainsKeyword {
 			return true
 		}
 	}
